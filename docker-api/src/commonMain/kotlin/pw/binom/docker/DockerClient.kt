@@ -1,7 +1,8 @@
 package pw.binom.docker
 
+import kotlinx.serialization.SerializationException
 import kotlinx.serialization.builtins.ListSerializer
-import kotlinx.serialization.json.Json
+import kotlinx.serialization.json.*
 import pw.binom.io.http.HTTPMethod
 import pw.binom.io.http.Headers
 import pw.binom.io.httpClient.HttpClient
@@ -18,9 +19,33 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         ignoreUnknownKeys = true
     }
 
-    suspend fun getContainers(onlyRunning: Boolean): List<Container> {
-        val uri = baseUrl.appendPath("containers/json")
+    suspend fun getContainers(
+        onlyRunning: Boolean = false,
+        ids: List<String> = emptyList(),
+        names: List<String> = emptyList(),
+        tags: List<String> = emptyList()
+    ): List<Container> {
+        val filters = HashMap<String, JsonElement>()
+        if (tags.isNotEmpty()) {
+            filters["filters"] = JsonArray(tags.map {
+                JsonPrimitive(it)
+            })
+        }
+        if (ids.isNotEmpty()) {
+            filters["id"] = JsonArray(ids.map {
+                JsonPrimitive(it)
+            })
+        }
+        if (names.isNotEmpty()) {
+            filters["name"] = JsonArray(names.map {
+                JsonPrimitive(it)
+            })
+        }
+        var uri = baseUrl.appendPath("containers/json")
             .appendQuery("all", !onlyRunning)
+        if (filters.isNotEmpty()) {
+            uri = uri.appendQuery("filters", json.encodeToString(JsonObject.serializer(), JsonObject(filters)))
+        }
 
         return client.connect(method = HTTPMethod.GET.code, uri = uri).use {
             val txt = it.getResponse().readText().let { it.readText() }
@@ -28,19 +53,28 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         }
     }
 
-    suspend fun createContainer(arguments: CreateContainerRequest) =
-        client.connect(method = HTTPMethod.POST.code, uri = baseUrl.appendPath("containers/create")).use {
+    suspend fun createContainer(arguments: CreateContainerRequest, name: String? = null): CreateContainerResponse {
+        var uri = baseUrl.appendPath("containers/create")
+        if (name != null) {
+            uri = uri.appendQuery("name", name)
+        }
+        return client.connect(method = HTTPMethod.POST.code, uri = uri).use {
             it.addHeader(Headers.CONTENT_TYPE, "application/json")
             val r = it.writeText {
                 it.append(json.encodeToString(CreateContainerRequest.serializer(), arguments))
             }
             val txt = r.readText().let { it.readText() }
-            if (r.responseCode != 201) {
-                val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
-                throw CreateContainerException(obj.msg)
+            try {
+                if (r.responseCode != 201) {
+                    val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
+                    throw CreateContainerException(obj.msg)
+                }
+            } catch (e: Throwable) {
+                throw SerializationException("Can't parse \"$txt\" to ErrorResponse.", e)
             }
             json.decodeFromString(CreateContainerResponse.serializer(), txt)
         }
+    }
 
     suspend fun startContainer(id: String) {
         client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/start")).use {

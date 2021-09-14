@@ -75,10 +75,33 @@ data class IPAMConfig(
 
 @Serializable
 data class HostConfig(
+    @SerialName("Binds")
+    val binds: List<String>? = null,
+
+    @SerialName("Links")
+    val links: List<String>? = null,
+
+    @SerialName("Memory")
+    val memory: Int? = null,
+
+    @SerialName("MemorySwap")
+    val memorySwap: Int? = null,
+
+    @SerialName("MemoryReservation")
+    val memoryReservation: Int? = null,
+
+    @SerialName("KernelMemory")
+    val kernelMemory: Int? = null,
+
+    @SerialName("NanoCpus")
+    val nanoCpus: Int? = null,
+
     @SerialName("MaximumIOps")
     val maximumIOps: Int? = null,
+
     @SerialName("MaximumIOBps")
     val maximumIOBps: Int? = null,
+
     @SerialName("BlkioWeight")
     val blkioWeight: Int? = null,
 
@@ -123,17 +146,7 @@ data class HostConfig(
     @SerialName("LxcConf")
     val lxcConf: List<String>? = null,
 
-    @SerialName("Memory")
-    val memory: Int? = null,
 
-    @SerialName("MemorySwap")
-    val memorySwap: Int? = null,
-
-    @SerialName("MemoryReservation")
-    val memoryReservation: Int? = null,
-
-    @SerialName("KernelMemory")
-    val kernelMemory: Int? = null,
 
     @SerialName("OomKillDisable")
     val oomKillDisable: Boolean? = null,
@@ -150,17 +163,38 @@ data class HostConfig(
     @SerialName("PortBindings")
     val portBindings: Map<String, List<PortBind>>? = null,
 
+    @SerialName("PublishAllPorts")
+    val publishAllPorts: Boolean? = null,
+
     @SerialName("Privileged")
     val privileged: Boolean? = null,
 
     @SerialName("ReadonlyRootfs")
     val readonlyRootfs: Boolean? = null,
 
-    @SerialName("PublishAllPorts")
-    val publishAllPorts: Boolean? = null,
+    @SerialName("Dns")
+    val dns: List<String>? = null,
+
+    @SerialName("DnsOptions")
+    val dnsOptions: List<String>? = null,
+
+    @SerialName("DnsSearch")
+    val dnsSearch: List<String>? = null,
+
+    @SerialName("VolumesFrom")
+    val volumesFrom: List<String>? = null,
+
+    @SerialName("CapAdd")
+    val capAdd: List<String>? = null,
+
+    @SerialName("GroupAdd")
+    val groupAdd: List<String>? = null,
 
     @SerialName("RestartPolicy")
     val restartPolicy: RestartPolicy? = null,
+
+    @SerialName("AutoRemove")
+    val autoRemove: Boolean? = null,
 
     @SerialName("LogConfig")
     val logConfig: LogConfig? = null,
