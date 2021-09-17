@@ -2,6 +2,7 @@ import kotlinx.coroutines.withTimeout
 import pw.binom.eachKotlinCompile
 import java.util.*
 import java.time.Duration
+
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("kotlinx-serialization")
@@ -38,17 +39,17 @@ kotlin {
 //        }
 //    }
 
-    linuxMips32 {
-        binaries {
-            staticLib()
-        }
-    }
-
-    linuxMipsel32 {
-        binaries {
-            staticLib()
-        }
-    }
+//    linuxMips32 {
+//        binaries {
+//            staticLib()
+//        }
+//    }
+//
+//    linuxMipsel32 {
+//        binaries {
+//            staticLib()
+//        }
+//    }
 
     mingwX64 { // Use your target instead.
         binaries {
@@ -72,7 +73,7 @@ kotlin {
         val commonMain by getting {
             dependencies {
                 api(kotlin("stdlib-common"))
-                api("pw.binom.io:httpClient:${pw.binom.Versions.LIB_VERSION}")
+                api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
             }
@@ -91,15 +92,15 @@ kotlin {
             kotlin.srcDir("src/linuxX64Main/kotlin")
         }
 
-        val linuxMips32Main by getting {
-            dependsOn(commonMain)
-            kotlin.srcDir("src/linuxX64Main/kotlin")
-        }
-
-        val linuxMipsel32Main by getting {
-            dependsOn(commonMain)
-            kotlin.srcDir("src/linuxX64Main/kotlin")
-        }
+//        val linuxMips32Main by getting {
+//            dependsOn(commonMain)
+//            kotlin.srcDir("src/linuxX64Main/kotlin")
+//        }
+//
+//        val linuxMipsel32Main by getting {
+//            dependsOn(commonMain)
+//            kotlin.srcDir("src/linuxX64Main/kotlin")
+//        }
 
         val mingwX64Main by getting {
             dependsOn(commonMain)

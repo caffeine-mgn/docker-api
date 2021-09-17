@@ -234,17 +234,19 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         client.connect(HTTPMethod.POST.code, uri).use {
             val r = it.getResponse()
             if (r.responseCode == 200) {
+                r.readText().let { it.readText() }
                 return@use
-            }
-            val txt = r.readText().let { it.readText() }
-            val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
-            if (r.responseCode == 404) {
-                throw RuntimeException(obj.msg)
             }
 
             if (r.responseCode == 404) {
+                throw RuntimeException("Can't find image \"$image\"")
+            }
+            val txt = r.readText().let { it.readText() }
+            val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
+            if (r.responseCode != 200) {
                 throw RuntimeException(obj.msg)
             }
+
         }
     }
 

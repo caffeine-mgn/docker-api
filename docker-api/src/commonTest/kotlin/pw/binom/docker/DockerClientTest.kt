@@ -12,12 +12,26 @@ class DockerClientTest {
 
     @OptIn(ExperimentalTime::class)
     @Test
-    fun test() {
+    fun test2() {
         val nd = NetworkDispatcher()
-        val dd = DeadlineTimer.create()
         nd.runSingle {
             BaseHttpClient(nd).use { client ->
                 val c = DockerClient(client)
+                println("pull...")
+                c.pullImage("tarantool/tarantool:2.8.2")
+                println("pulled!")
+            }
+        }
+    }
+
+    @OptIn(ExperimentalTime::class)
+    @Test
+    fun test() {
+        val nd = NetworkDispatcher()
+        nd.runSingle {
+            BaseHttpClient(nd).use { client ->
+                val c = DockerClient(client)
+                c.pullImage("tarantool/tarantool:2.8.2")
                 c.pullImage("postgres:11")
                 val cc = c.createContainer(
                     CreateContainerRequest(
