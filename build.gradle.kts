@@ -19,6 +19,6 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven(url = "https://repo.binom.pw/releases")
+        maven(url = "https://repo.binom.pw")
     }
 }
