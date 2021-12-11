@@ -1,19 +1,11 @@
-package pw.binom.docker
+package pw.binom.docker.serialization
 
 import kotlinx.serialization.KSerializer
-import kotlinx.serialization.Serializable
 import kotlinx.serialization.builtins.serializer
 import kotlinx.serialization.descriptors.SerialDescriptor
 import kotlinx.serialization.encoding.Decoder
 import kotlinx.serialization.encoding.Encoder
-
-@Serializable(EnvSerializer::class)
-data class Env(val name: String, val value: String) {
-    init {
-        require(name.isNotBlank()) { "Name is empty" }
-        require(" " !in name) { "Invalid name \"$name\". Name should not contains space" }
-    }
-}
+import pw.binom.docker.dto.Env
 
 object EnvSerializer : KSerializer<Env> {
     override fun deserialize(decoder: Decoder): Env {

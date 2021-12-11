@@ -1,4 +1,4 @@
-package pw.binom.docker
+package pw.binom.docker.exceptions
 
 open class DockerException:RuntimeException {
     constructor() : super()

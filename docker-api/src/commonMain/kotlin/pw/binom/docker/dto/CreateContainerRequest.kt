@@ -1,4 +1,4 @@
-package pw.binom.docker
+package pw.binom.docker.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
@@ -11,14 +11,26 @@ data class CreateContainerRequest(
     val domainName: String? = null,
     @SerialName("User")
     val user: String? = null,
+
+    /**
+     * Whether to attach to `stdin`.
+     */
     @SerialName("AttachStdin")
     val attachStdin: Boolean? = null,
     @SerialName("AttachStdout")
-    val AttachStdout: Boolean? = null,
+    val attachStdout: Boolean? = null,
     @SerialName("AttachStderr")
     val attachStderr: Boolean? = null,
+
+    /**
+     * Attach standard streams to a TTY, including `stdin` if it is not closed.
+     */
     @SerialName("Tty")
     val tty: Boolean? = null,
+
+    /**
+     * Open `stdin`
+     */
     @SerialName("OpenStdin")
     val openStdin: Boolean? = null,
     @SerialName("StdinOnce")
@@ -102,23 +114,41 @@ data class HostConfig(
     @SerialName("MaximumIOBps")
     val maximumIOBps: Int? = null,
 
+    /**
+     * Block IO weight (relative weight).
+     */
     @SerialName("BlkioWeight")
     val blkioWeight: Int? = null,
 
+    /**
+     * Block IO weight (relative device weight)
+     */
     @SerialName("BlkioWeightDevice")
-    val blkioWeightDevice: List<Map<String, String>> = emptyList(),
+    val blkioWeightDevice: List<BlkioWeightDevice>? = null,
 
+    /**
+     * Limit read rate (bytes per second) from a device
+     */
     @SerialName("BlkioDeviceReadBps")
-    val blkioDeviceReadBps: List<Map<String, String>> = emptyList(),
+    val blkioDeviceReadBps: List<ThrottleDevice>? = null,
 
+    /**
+     * Limit write rate (bytes per second) to a device
+     */
     @SerialName("BlkioDeviceWriteBps")
-    val blkioDeviceWriteBps: List<Map<String, String>> = emptyList(),
+    val blkioDeviceWriteBps: List<ThrottleDevice>? = null,
 
+    /**
+     * Limit read rate (IO per second) from a device
+     */
     @SerialName("BlkioDeviceReadIOps")
-    val blkioDeviceReadIOps: List<Map<String, String>> = emptyList(),
+    val blkioDeviceReadIOps: List<ThrottleDevice>? = null,
 
+    /**
+     * Limit write rate (IO per second) to a device
+     */
     @SerialName("BlkioDeviceWriteIOps")
-    val blkioDeviceWriteIOps: List<Map<String, String>> = emptyList(),
+    val blkioDeviceWriteIOps: List<ThrottleDevice>? = null,
     @SerialName("ContainerIDFile")
     val containerIDFile: String? = null,
     @SerialName("CpusetCpus")
@@ -261,4 +291,24 @@ data class Device(
     val capabilities: List<String>,
     @SerialName("Options")
     val options: Map<String, String>,
+)
+
+@Serializable
+data class BlkioWeightDevice(
+        @SerialName("Path")
+        val path:String,
+        @SerialName("Weight")
+        val weight:Int,
+)
+
+@Serializable
+data class ThrottleDevice(
+        /**
+         * Device path
+         */
+        @SerialName("Path")
+        val path:String,
+
+        @SerialName("Rate")
+        val rate:Long,
 )

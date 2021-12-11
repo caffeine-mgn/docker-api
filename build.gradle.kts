@@ -8,7 +8,6 @@ buildscript {
     dependencies {
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:${pw.binom.Versions.KOTLIN_VERSION}")
         classpath("org.jetbrains.kotlin:kotlin-serialization:${pw.binom.Versions.KOTLIN_VERSION}")
-        classpath("com.bmuschko:gradle-docker-plugin:6.6.1")
     }
 }
 
@@ -19,6 +18,6 @@ allprojects {
     repositories {
         mavenLocal()
         mavenCentral()
-        maven(url = "https://repo.binom.pw/releases")
+        maven(url = "https://repo.binom.pw")
     }
 }

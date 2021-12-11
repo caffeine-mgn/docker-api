@@ -2,6 +2,7 @@ import kotlinx.coroutines.withTimeout
 import pw.binom.eachKotlinCompile
 import java.util.*
 import java.time.Duration
+import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -26,18 +27,21 @@ kotlin {
             staticLib()
         }
     }
-
-    linuxArm32Hfp {
-        binaries {
-            staticLib()
+    if (pw.binom.Target.LINUX_ARM32HFP_SUPPORT) {
+        linuxArm32Hfp {
+            binaries {
+                staticLib()
+            }
         }
     }
 
-//    linuxArm64 {
-//        binaries {
-//            staticLib()
-//        }
-//    }
+    if (pw.binom.Target.LINUX_ARM64_SUPPORT) {
+        linuxArm64 {
+            binaries {
+                staticLib()
+            }
+        }
+    }
 
 //    linuxMips32 {
 //        binaries {
@@ -56,10 +60,11 @@ kotlin {
             staticLib()
         }
     }
-
-    mingwX86 { // Use your target instead.
-        binaries {
-            staticLib()
+    if (pw.binom.Target.MINGW_X86_SUPPORT) {
+        mingwX86 { // Use your target instead.
+            binaries {
+                staticLib()
+            }
         }
     }
 
@@ -74,6 +79,7 @@ kotlin {
             dependencies {
                 api(kotlin("stdlib-common"))
                 api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
+//                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${pw.binom.Versions.KOTLINX_COROUTINES_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
             }
@@ -81,38 +87,29 @@ kotlin {
 
         val linuxX64Main by getting {
             dependsOn(commonMain)
-            kotlin.srcDir("src/linuxX64Main/kotlin")
         }
-//        val linuxArm64Main by getting {
-//            dependsOn(commonMain)
-//            kotlin.srcDir("src/linuxX64Main/kotlin")
-//        }
-        val linuxArm32HfpMain by getting {
-            dependsOn(commonMain)
-            kotlin.srcDir("src/linuxX64Main/kotlin")
+        if (pw.binom.Target.LINUX_ARM64_SUPPORT) {
+            val linuxArm64Main by getting {
+                dependsOn(commonMain)
+            }
         }
-
-//        val linuxMips32Main by getting {
-//            dependsOn(commonMain)
-//            kotlin.srcDir("src/linuxX64Main/kotlin")
-//        }
-//
-//        val linuxMipsel32Main by getting {
-//            dependsOn(commonMain)
-//            kotlin.srcDir("src/linuxX64Main/kotlin")
-//        }
+        if (pw.binom.Target.LINUX_ARM32HFP_SUPPORT) {
+            val linuxArm32HfpMain by getting {
+                dependsOn(commonMain)
+            }
+        }
 
         val mingwX64Main by getting {
             dependsOn(commonMain)
         }
-        val mingwX86Main by getting {
-            dependsOn(commonMain)
-            kotlin.srcDir("src/mingwX64Main/kotlin")
+        if (pw.binom.Target.MINGW_X86_SUPPORT) {
+            val mingwX86Main by getting {
+                dependsOn(commonMain)
+            }
         }
 
         val macosX64Main by getting {
             dependsOn(commonMain)
-            kotlin.srcDir("src/linuxX64Main/kotlin")
         }
 
         val commonTest by getting {
@@ -124,12 +121,22 @@ kotlin {
         val jvmTest by getting {
             dependsOn(commonTest)
             dependencies {
-                api(kotlin("test-junit"))
+                api(kotlin("test"))
             }
         }
         val linuxX64Test by getting {
             dependsOn(commonTest)
         }
+    }
+}
+
+tasks {
+    withType(KotlinJvmTest::class) {
+        useJUnitPlatform()
+        testLogging.showStandardStreams = true
+    }
+    val jvmTest by getting {
+        println("-->${this::class.java}")
     }
 }
 

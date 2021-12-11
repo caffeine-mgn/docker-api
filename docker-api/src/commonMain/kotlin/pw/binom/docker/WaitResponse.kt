@@ -2,6 +2,7 @@ package pw.binom.docker
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
+import pw.binom.docker.dto.ErrorResponse
 
 @Serializable
 data class WaitResponse(
