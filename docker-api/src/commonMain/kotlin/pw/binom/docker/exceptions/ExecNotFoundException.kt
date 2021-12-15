@@ -1,6 +1,8 @@
 package pw.binom.docker.exceptions
 
-class ExecNotFoundException(val id: String) : DockerException() {
+import pw.binom.docker.dto.ExecId
+
+class ExecNotFoundException(val id: ExecId) : DockerException() {
     override val message: String
-        get() = "Exec instance $id not found"
+        get() = "Exec instance ${id.value} not found"
 }

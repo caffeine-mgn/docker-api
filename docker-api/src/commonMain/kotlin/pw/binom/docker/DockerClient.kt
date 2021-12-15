@@ -11,7 +11,7 @@ import kotlinx.serialization.json.*
 import pw.binom.docker.console.Console
 import pw.binom.docker.console.DetachConsole
 import pw.binom.docker.console.RawConsole
-import pw.binom.docker.console.TextConsole
+import pw.binom.docker.console.FrameConsole
 import pw.binom.docker.dto.*
 import pw.binom.docker.exceptions.ContainerNotFoundException
 import pw.binom.docker.exceptions.CreateContainerException
@@ -198,7 +198,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         }
     }
 
-    suspend fun kill(id: String, signal: String? = null) {
+    suspend fun killContainers(id: String, signal: String? = null) {
         require(signal == null || signal.isNotEmpty()) { "stopTimeout should be more or equal 0" }
         var uri = "http://127.0.0.1:2375/containers/$id/kill".toURI()
         if (signal != null) {
@@ -220,7 +220,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         }
     }
 
-    suspend fun rename(id: String, newName: String) {
+    suspend fun renameContainer(id: String, newName: String) {
         require(newName.isNotEmpty()) { "stopTimeout should be more or equal 0" }
 
         val uri = baseUrl.appendPath("containers/$id/rename").appendQuery("name", newName)
@@ -342,7 +342,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      * @param force If the container is running, kill it before removing it.
      * @param link Remove the specified link associated with the container.
      */
-    suspend fun remove(id: String, volumes: Boolean? = null, force: Boolean? = null, link: Boolean? = null) {
+    suspend fun removeContainer(id: String, volumes: Boolean? = null, force: Boolean? = null, link: Boolean? = null) {
         var uri = baseUrl.appendPath("containers/$id")
         if (volumes != null) {
             uri = uri.appendQuery("v", volumes)
@@ -378,7 +378,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         uri = baseUrl.appendPath("containers/$id/exec"),
     ).use {
         @Serializable
-        data class ExecId(@SerialName("Id") val id: String)
+        data class ExecIdDto(@SerialName("Id") val id: String)
         it.setHeader(Headers.CONTENT_TYPE, "application/json")
         val r = it.writeText {
             it.append(json.encodeToString(ExecArgs.serializer(), args))
@@ -395,7 +395,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
             throw RuntimeException("Can't execute: ${obj.msg}")
         }
-        json.decodeFromString(ExecId.serializer(), txt).id
+        ExecId(json.decodeFromString(ExecIdDto.serializer(), txt).id)
     }
 
 
@@ -479,17 +479,17 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         return if (raw) {
             RawConsole(r.startTcp())
         } else {
-            TextConsole(r.startTcp())
+            FrameConsole(r.startTcp())
         }
     }
 
     suspend fun startExec(
-        id: String,
+        id: ExecId,
         detach: Boolean,
         tty: Boolean? = null,
         raw: Boolean,
     ): Console {
-        val uri = baseUrl.appendPath("exec/$id/start")
+        val uri = baseUrl.appendPath("exec/${id.value}/start")
 
         @Serializable
         class ExecStartData(val Detach: Boolean, val Tty: Boolean? = null)
@@ -523,12 +523,12 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         return if (raw) {
             RawConsole(resp.startTcp())
         } else {
-            TextConsole(resp.startTcp())
+            FrameConsole(resp.startTcp())
         }
     }
 
-    suspend fun inspectExec(id: String): ExecInstance {
-        val uri = baseUrl.appendPath("exec").appendPath(id, encode = true).appendPath("json")
+    suspend fun inspectExec(id: ExecId): ExecInstance {
+        val uri = baseUrl.appendPath("exec").appendPath(id.value, encode = true).appendPath("json")
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri,

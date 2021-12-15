@@ -8,7 +8,7 @@ import pw.binom.io.bufferedInput
 import pw.binom.io.bufferedOutput
 import pw.binom.io.use
 
-class TextConsole(val channel: AsyncChannel) : Console {
+class FrameConsole(val channel: AsyncChannel) : Console {
     private val lock = SpinLock()
     private val reader = channel.bufferedInput(closeStream = false)
     private val writer = channel.bufferedOutput(closeStream = false)
@@ -76,10 +76,12 @@ class TextConsole(val channel: AsyncChannel) : Console {
     }
 
     suspend fun writeBinary(data: ByteBuffer) {
-        makeFrameHeader(StreamType.STDIN, data.remaining)
-        writer.writeFully(packageBuffer)
-        writer.writeFully(data)
-        writer.flush()
+        lock.synchronize {
+            makeFrameHeader(StreamType.STDIN, data.remaining)
+            writer.writeFully(packageBuffer)
+            writer.writeFully(data)
+            writer.flush()
+        }
     }
 
     suspend fun writeText(data: String) {

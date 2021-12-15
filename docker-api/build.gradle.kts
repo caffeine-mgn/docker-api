@@ -79,7 +79,6 @@ kotlin {
             dependencies {
                 api(kotlin("stdlib-common"))
                 api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
-//                api("org.jetbrains.kotlinx:kotlinx-coroutines-core:${pw.binom.Versions.KOTLINX_COROUTINES_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
             }
@@ -131,12 +130,9 @@ kotlin {
 }
 
 tasks {
-    withType(KotlinJvmTest::class) {
+    withType(Test::class) {
         useJUnitPlatform()
         testLogging.showStandardStreams = true
-    }
-    val jvmTest by getting {
-        println("-->${this::class.java}")
     }
 }
 

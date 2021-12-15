@@ -7,7 +7,7 @@ import kotlinx.coroutines.launch
 import pw.binom.io.httpClient.HttpClient
 import pw.binom.network.NetworkCoroutineDispatcher
 import pw.binom.concurrency.sleep
-import pw.binom.docker.console.TextConsole
+import pw.binom.docker.console.FrameConsole
 import pw.binom.docker.dto.*
 import pw.binom.io.*
 import pw.binom.io.httpClient.create
@@ -107,7 +107,7 @@ class DockerClientTest {
                         tty = false,
                         raw = false
                     ).use { console ->
-                        if (console is TextConsole) {
+                        if (console is FrameConsole) {
                             console.readTextFrame {
                                 println("->${it.streamType}: ${it.data}")
                             }
@@ -138,7 +138,7 @@ class DockerClientTest {
 //                }
                 assertTrue(c.getContainers().any { it.id == cc.id })
                 c.stopContainer(cc.id)
-                c.remove(id = cc.id)
+                c.removeContainer(id = cc.id)
             }
         }
     }
