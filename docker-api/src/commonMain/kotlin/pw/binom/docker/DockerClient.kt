@@ -10,13 +10,14 @@ import kotlinx.serialization.builtins.ListSerializer
 import kotlinx.serialization.json.*
 import pw.binom.docker.console.Console
 import pw.binom.docker.console.DetachConsole
-import pw.binom.docker.console.RawConsole
 import pw.binom.docker.console.FrameConsole
+import pw.binom.docker.console.RawConsole
 import pw.binom.docker.dto.*
 import pw.binom.docker.exceptions.ContainerNotFoundException
 import pw.binom.docker.exceptions.CreateContainerException
 import pw.binom.docker.exceptions.DockerException
 import pw.binom.docker.exceptions.ExecNotFoundException
+import pw.binom.io.UTF8
 import pw.binom.io.http.HTTPMethod
 import pw.binom.io.http.Headers
 import pw.binom.io.http.forEachHeader
@@ -27,6 +28,7 @@ import pw.binom.io.httpClient.setHeader
 import pw.binom.io.readText
 import pw.binom.io.use
 import pw.binom.net.URI
+import pw.binom.net.toPath
 import pw.binom.net.toURI
 import kotlin.time.ExperimentalTime
 
@@ -45,37 +47,43 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     ): List<Container> {
         val filters = HashMap<String, JsonElement>()
         if (tags.isNotEmpty()) {
-            filters["filters"] = JsonArray(tags.map {
-                JsonPrimitive(it)
-            })
+            filters["filters"] = JsonArray(
+                tags.map {
+                    JsonPrimitive(it)
+                }
+            )
         }
         if (ids.isNotEmpty()) {
-            filters["id"] = JsonArray(ids.map {
-                JsonPrimitive(it)
-            })
+            filters["id"] = JsonArray(
+                ids.map {
+                    JsonPrimitive(it)
+                }
+            )
         }
         if (names.isNotEmpty()) {
-            filters["name"] = JsonArray(names.map {
-                JsonPrimitive(it)
-            })
+            filters["name"] = JsonArray(
+                names.map {
+                    JsonPrimitive(it)
+                }
+            )
         }
-        var uri = baseUrl.appendPath("containers/json").appendQuery("all", !onlyRunning)
+        var uri = baseUrl.appendPath("containers/json".toPath).appendQuery("all", (!onlyRunning).toString())
         if (filters.isNotEmpty()) {
             uri = uri.appendQuery("filters", json.encodeToString(JsonObject.serializer(), JsonObject(filters)))
         }
 
-        return client.connect(method = HTTPMethod.GET.code, uri = uri).use {
+        return client.connect(method = HTTPMethod.GET.code, uri = uri.toURL()).use {
             val txt = it.getResponse().readText().let { it.readText() }
             json.decodeFromString(ListSerializer(Container.serializer()), txt)
         }
     }
 
     suspend fun createContainer(arguments: CreateContainerRequest, name: String? = null): CreateContainerResponse {
-        var uri = baseUrl.appendPath("containers/create")
+        var uri = baseUrl.appendPath("containers/create".toPath)
         if (name != null) {
             uri = uri.appendQuery("name", name)
         }
-        return client.connect(method = HTTPMethod.POST.code, uri = uri).use {
+        return client.connect(method = HTTPMethod.POST.code, uri = uri.toURL()).use {
             it.addHeader(Headers.CONTENT_TYPE, "application/json")
             val r = it.writeText {
                 it.append(json.encodeToString(CreateContainerRequest.serializer(), arguments))
@@ -94,7 +102,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun startContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/start")).use {
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/start".toPath).toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 304) {
@@ -113,12 +121,12 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     suspend fun stopContainer(id: String, stopTimeout: Int? = null) {
         require(stopTimeout == null || stopTimeout >= 0) { "stopTimeout should be more or equal 0" }
 
-        var uri = baseUrl.appendPath("containers/$id/stop")
+        var uri = baseUrl.appendPath("containers/$id/stop".toPath)
         if (stopTimeout != null) {
-            uri = uri.appendQuery("t", stopTimeout)
+            uri = uri.appendQuery("t", stopTimeout.toString())
         }
 
-        client.connect(HTTPMethod.POST.code, uri).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 304) {
@@ -135,7 +143,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun pauseContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/pause")).use {
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/pause".toPath).toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -149,7 +157,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun unpauseContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/unpause")).use {
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/unpause".toPath).toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -163,7 +171,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun waitForStopContainer(id: String): WaitResponse {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/wait")).use {
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/wait".toPath).toURL()).use {
             val r = it.getResponse()
             if (r.responseCode == 200) {
                 val txt = r.readText().let { it.readText() }
@@ -183,9 +191,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         require(stopTimeout == null || stopTimeout >= 0) { "stopTimeout should be more or equal 0" }
         var uri = "http://127.0.0.1:2375/containers/$id/restart".toURI()
         if (stopTimeout != null) {
-            uri = uri.appendQuery("t", stopTimeout)
+            uri = uri.appendQuery("t", stopTimeout.toString())
         }
-        client.connect(HTTPMethod.POST.code, uri).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -204,7 +212,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (signal != null) {
             uri = uri.appendQuery("signal", signal)
         }
-        client.connect(HTTPMethod.POST.code, uri).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -223,8 +231,8 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     suspend fun renameContainer(id: String, newName: String) {
         require(newName.isNotEmpty()) { "stopTimeout should be more or equal 0" }
 
-        val uri = baseUrl.appendPath("containers/$id/rename").appendQuery("name", newName)
-        client.connect(HTTPMethod.POST.code, uri).use {
+        val uri = baseUrl.appendPath("containers/$id/rename".toPath).appendQuery("name", newName)
+        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -249,13 +257,13 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun pullImage(image: String, tag: String? = null) {
-        var uri = baseUrl.appendPath("images/create")
+        var uri = baseUrl.appendPath("images/create".toPath)
         uri = uri.appendQuery("fromImage", image)
         if (tag != null) {
             uri = uri.appendQuery("tag", tag)
         }
 
-        client.connect(HTTPMethod.POST.code, uri).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
             val r = it.getResponse()
             if (r.responseCode == 200) {
                 r.readText().let { it.readText() }
@@ -279,10 +287,10 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      * @param size Return the size of container as fields SizeRw and SizeRootFs
      */
     suspend fun inspectСontainer(id: String, size: Boolean = false): ContainerInfo {
-        val uri = baseUrl.appendPath("containers/$id/json").appendQuery("size", size)
+        val uri = baseUrl.appendPath("containers/$id/json".toPath).appendQuery("size", size.toString())
         client.connect(
             method = HTTPMethod.GET.code,
-            uri = uri,
+            uri = uri.toURL()
         ).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
@@ -311,10 +319,10 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      * @param size Return the size of container as fields SizeRw and SizeRootFs
      */
     suspend fun inspectImage(name: String): ImageInfo {
-        val uri = baseUrl.appendPath("images").appendPath(name, encode = true).appendPath("json")
+        val uri = baseUrl.appendPath("images".toPath).appendPath(UTF8.encode(name).toPath).appendPath("json".toPath)
         client.connect(
             method = HTTPMethod.GET.code,
-            uri = uri,
+            uri = uri.toURL()
         ).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
@@ -343,17 +351,17 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      * @param link Remove the specified link associated with the container.
      */
     suspend fun removeContainer(id: String, volumes: Boolean? = null, force: Boolean? = null, link: Boolean? = null) {
-        var uri = baseUrl.appendPath("containers/$id")
+        var uri = baseUrl.appendPath("containers/$id".toPath)
         if (volumes != null) {
-            uri = uri.appendQuery("v", volumes)
+            uri = uri.appendQuery("v", volumes.toString())
         }
         if (force != null) {
-            uri = uri.appendQuery("force", force)
+            uri = uri.appendQuery("force", force.toString())
         }
         if (link != null) {
-            uri = uri.appendQuery("link", link)
+            uri = uri.appendQuery("link", link.toString())
         }
-        client.connect(HTTPMethod.DELETE.code, uri).use {
+        client.connect(HTTPMethod.DELETE.code, uri.toURL()).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -375,7 +383,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      */
     suspend fun exec(id: String, args: ExecArgs) = client.connect(
         method = HTTPMethod.POST.code,
-        uri = baseUrl.appendPath("containers/$id/exec"),
+        uri = baseUrl.appendPath("containers/$id/exec".toPath).toURL()
     ).use {
         @Serializable
         data class ExecIdDto(@SerialName("Id") val id: String)
@@ -398,7 +406,6 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         ExecId(json.decodeFromString(ExecIdDto.serializer(), txt).id)
     }
 
-
     /**
      * Attach to a container
      * @param id ID or name of the container
@@ -417,7 +424,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         stdout: Boolean = false,
         stderr: Boolean = false
     ): WebSocketConnection {
-        var uri = baseUrl.appendPath("containers/$id/attach/ws")
+        var uri = baseUrl.appendPath("containers/$id/attach/ws".toPath)
         if (logs) {
             uri = uri.appendQuery("logs", "1")
         }
@@ -434,7 +441,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             uri = uri.appendQuery("stderr", "1")
         }
         println("uri=$uri")
-        return client.connect(HTTPMethod.GET.code, uri = uri).startWebSocket()
+        return client.connect(HTTPMethod.GET.code, uri = uri.toURL()).startWebSocket()
     }
 
     /**
@@ -454,9 +461,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         stdin: Boolean = false,
         stdout: Boolean = false,
         stderr: Boolean = false,
-        raw: Boolean,
+        raw: Boolean
     ): Console {
-        var uri = baseUrl.appendPath("containers/$id/attach")
+        var uri = baseUrl.appendPath("containers/$id/attach".toPath)
         if (logs) {
             uri = uri.appendQuery("logs", "1")
         }
@@ -474,7 +481,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         }
         println("uri=$uri")
 
-        val r = client.connect(HTTPMethod.POST.code, uri = uri)
+        val r = client.connect(HTTPMethod.POST.code, uri = uri.toURL())
         r.setHeader(Headers.CONTENT_TYPE, "application/vnd.docker.raw-stream")
         return if (raw) {
             RawConsole(r.startTcp())
@@ -487,19 +494,20 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         id: ExecId,
         detach: Boolean,
         tty: Boolean? = null,
-        raw: Boolean,
+        raw: Boolean
     ): Console {
-        val uri = baseUrl.appendPath("exec/${id.value}/start")
+        val uri = baseUrl.appendPath("exec/${id.value}/start".toPath)
 
         @Serializable
         class ExecStartData(val Detach: Boolean, val Tty: Boolean? = null)
 
-        val r = client.connect(HTTPMethod.POST.code, uri = uri)
+        val r = client.connect(HTTPMethod.POST.code, uri = uri.toURL())
         r.setHeader(Headers.CONTENT_TYPE, "application/json")
         val resp = r.writeText {
             it.append(
                 json.encodeToString(
-                    ExecStartData.serializer(), ExecStartData(Detach = detach, Tty = tty)
+                    ExecStartData.serializer(),
+                    ExecStartData(Detach = detach, Tty = tty)
                 )
             )
         }
@@ -528,10 +536,10 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun inspectExec(id: ExecId): ExecInstance {
-        val uri = baseUrl.appendPath("exec").appendPath(id.value, encode = true).appendPath("json")
+        val uri = baseUrl.appendPath("exec".toPath).appendPath(UTF8.encode(id.value).toPath).appendPath("json".toPath)
         client.connect(
             method = HTTPMethod.GET.code,
-            uri = uri,
+            uri = uri.toURL()
         ).use {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
@@ -549,7 +557,6 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             }
         }
     }
-
 
     suspend fun waitContainerRunning(id: String) {
 //        println("Wating health")

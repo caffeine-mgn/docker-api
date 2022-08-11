@@ -72,7 +72,7 @@ data class CreateContainerRequest(
     @SerialName("HostConfig")
     val hostConfig: HostConfig? = null,
     @SerialName("NetworkingConfig")
-    val networkingConfig: NetworkingConfig? = null,
+    val networkingConfig: NetworkingConfig? = null
 )
 
 @Serializable
@@ -82,7 +82,7 @@ data class IPAMConfig(
     @SerialName("IPv6Address")
     val ipv6Address: String? = null,
     @SerialName("LinkLocalIPs")
-    val linkLocalIPs: List<String>? = null,
+    val linkLocalIPs: List<String>? = null
 )
 
 @Serializable
@@ -176,8 +176,6 @@ data class HostConfig(
     @SerialName("LxcConf")
     val lxcConf: List<String>? = null,
 
-
-
     @SerialName("OomKillDisable")
     val oomKillDisable: Boolean? = null,
 
@@ -239,7 +237,7 @@ data class HostConfig(
     val volumeDriver: String? = null,
 
     @SerialName("ShmSize")
-    val shmSize: Int? = null,
+    val shmSize: Int? = null
 )
 
 @Serializable
@@ -248,19 +246,19 @@ data class RestartPolicy(
     val maximumRetryCount: Int? = null,
 
     @SerialName("Name")
-    val Name: String? = null,
+    val Name: String? = null
 )
 
 @Serializable
 data class LogConfig(
     @SerialName("Type")
-    val type: String? = null,
+    val type: String? = null
 )
 
 @Serializable
 data class PortBind(
     @SerialName("HostPort")
-    val hostPort: String,
+    val hostPort: String
 )
 
 @Serializable
@@ -270,7 +268,7 @@ data class NetworkInterface(
     @SerialName("Links")
     val links: List<String>,
     @SerialName("Aliases")
-    val aliases: List<String>,
+    val aliases: List<String>
 )
 
 @Serializable
@@ -290,25 +288,25 @@ data class Device(
     @SerialName("Capabilities")
     val capabilities: List<String>,
     @SerialName("Options")
-    val options: Map<String, String>,
+    val options: Map<String, String>
 )
 
 @Serializable
 data class BlkioWeightDevice(
-        @SerialName("Path")
-        val path:String,
-        @SerialName("Weight")
-        val weight:Int,
+    @SerialName("Path")
+    val path: String,
+    @SerialName("Weight")
+    val weight: Int
 )
 
 @Serializable
 data class ThrottleDevice(
-        /**
-         * Device path
-         */
-        @SerialName("Path")
-        val path:String,
+    /**
+     * Device path
+     */
+    @SerialName("Path")
+    val path: String,
 
-        @SerialName("Rate")
-        val rate:Long,
+    @SerialName("Rate")
+    val rate: Long
 )

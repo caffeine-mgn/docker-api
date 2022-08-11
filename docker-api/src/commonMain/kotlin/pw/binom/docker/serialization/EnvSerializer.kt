@@ -12,7 +12,7 @@ object EnvSerializer : KSerializer<Env> {
         val items = decoder.decodeString().split(' ', limit = 2)
         return Env(
             name = items[0],
-            value = items[1],
+            value = items[1]
         )
     }
 
@@ -22,5 +22,4 @@ object EnvSerializer : KSerializer<Env> {
     override fun serialize(encoder: Encoder, value: Env) {
         encoder.encodeString("${value.name}=${value.value}")
     }
-
 }

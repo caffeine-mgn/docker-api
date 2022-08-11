@@ -32,12 +32,12 @@ data class Container(
     @SerialName("HostConfig")
     val hostConfig: HostConfig? = null,
     @SerialName("NetworkSettings")
-    val networkSettings: NetworkSettings? = null,
+    val networkSettings: NetworkSettings? = null
 
-    ) {
+) {
     @Serializable
     data class HostConfig(
-        val NetworkMode: String,
+        val NetworkMode: String
     )
 
     @Serializable
@@ -124,6 +124,6 @@ data class Container(
         @SerialName("PublicPort")
         val PublicPort: Int? = null,
         @SerialName("Type")
-        val Type: String? = null,
+        val Type: String? = null
     )
 }

@@ -2,7 +2,7 @@ package pw.binom.docker.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pw.binom.date.Date
+import pw.binom.date.DateTime
 import pw.binom.docker.serialization.DateIso8601Serializer
 
 @Serializable
@@ -19,7 +19,7 @@ data class ImageInfo(
     val comment: String,
     @SerialName("Created")
     @Serializable(DateIso8601Serializer::class)
-    val created: Date,
+    val created: DateTime,
     @SerialName("Container")
     val container: String,
     /**

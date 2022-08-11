@@ -10,4 +10,3 @@ data class Env(val name: String, val value: String) {
         require(" " !in name) { "Invalid name \"$name\". Name should not contains space" }
     }
 }
-

@@ -1,5 +1,4 @@
 import kotlinx.coroutines.withTimeout
-import pw.binom.eachKotlinCompile
 import java.util.*
 import java.time.Duration
 import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
@@ -7,11 +6,12 @@ import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
     id("kotlinx-serialization")
+    id("maven-publish")
 }
 
-apply {
-    plugin(pw.binom.plugins.BinomPublishPlugin::class.java)
-}
+//apply {
+//    plugin(pw.binom.plugins.BinomPublishPlugin::class.java)
+//}
 
 kotlin {
     jvm {
@@ -115,6 +115,7 @@ kotlin {
             dependencies {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${pw.binom.Versions.KOTLINX_COROUTINES_VERSION}")
             }
         }
         val jvmTest by getting {
@@ -136,4 +137,14 @@ tasks {
     }
 }
 
-apply<pw.binom.plugins.DocsPlugin>()
+apply<pw.binom.publish.plugins.PrepareProject>()
+
+extensions.getByType(pw.binom.publish.plugins.PublicationPomInfoExtension::class).apply {
+    useApache2License()
+    gitScm("https://github.com/caffeine-mgn/docker-api")
+    author(
+        id = "subochev",
+        name = "Anton Subochev",
+        email = "caffeine.mgn@gmail.com"
+    )
+}

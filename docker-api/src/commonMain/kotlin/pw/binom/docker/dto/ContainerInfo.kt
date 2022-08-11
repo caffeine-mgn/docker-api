@@ -2,7 +2,7 @@ package pw.binom.docker.dto
 
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
-import pw.binom.date.Date
+import pw.binom.date.DateTime
 import pw.binom.docker.serialization.DateIso8601Serializer
 
 @Serializable
@@ -18,7 +18,7 @@ data class ContainerInfo(
      */
     @SerialName("Created")
     @Serializable(DateIso8601Serializer::class)
-    val created: Date,
+    val created: DateTime,
 
     /**
      * The path to the command being run
@@ -124,7 +124,7 @@ data class ContainerInfo(
      * NetworkSettings exposes the network settings in the API
      */
     @SerialName("NetworkSettings")
-    val networkSettings: ContainerNetwork? = null,
+    val networkSettings: ContainerNetwork? = null
 ) {
 //    @Serializable
 //    data class HostConfig(
@@ -284,7 +284,7 @@ data class ContainerInfo(
          * Shell for when `RUN`, `CMD`, and `ENTRYPOINT` uses a shell.
          */
         @SerialName("Shell")
-        val shell: List<String> = emptyList(),
+        val shell: List<String> = emptyList()
     )
 
     @Serializable
@@ -321,7 +321,7 @@ data class ContainerInfo(
          * Start period for the container to initialize before starting health-retries countdown in nanoseconds. It should be 0 or at least 1000000 (1 ms). 0 means inherit.
          */
         @SerialName("StartPeriod")
-        val startPeriod: Int? = null,
+        val startPeriod: Int? = null
     )
 }
 
@@ -499,7 +499,7 @@ data class Mount(
     @SerialName("RW")
     val rw: Boolean,
     @SerialName("Propagation")
-    val propagation: String,
+    val propagation: String
 )
 
 /**
@@ -556,20 +556,20 @@ data class ContainerState(
      */
     @SerialName("StartedAt")
     @Serializable(DateIso8601Serializer::class)
-    val startedAt: Date? = null,
+    val startedAt: DateTime? = null,
 
     /**
      * The time when this container last exited.
      */
     @Serializable(DateIso8601Serializer::class)
     @SerialName("FinishedAt")
-    val finishedAt: Date? = null,
+    val finishedAt: DateTime? = null,
 
     /**
      * Health stores information about the container's healthcheck results.
      */
     @SerialName("Health")
-    val health: HealthContainer? = null,
+    val health: HealthContainer? = null
 )
 
 /**
@@ -627,14 +627,14 @@ data class Log(
      */
     @Serializable(DateIso8601Serializer::class)
     @SerialName("Start")
-    val start: Date,
+    val start: DateTime,
 
     /**
      * Date and time at which this check ended
      */
     @Serializable(DateIso8601Serializer::class)
     @SerialName("End")
-    val end: Date,
+    val end: DateTime,
 
     /**
      * ExitCode meanings:
@@ -651,7 +651,7 @@ data class Log(
      * Output from last check
      */
     @SerialName("Output")
-    val output: String,
+    val output: String
 )
 
 @Serializable

@@ -1,16 +1,14 @@
 package pw.binom.docker.console
 
-import pw.binom.*
 import pw.binom.concurrency.SpinLock
 import pw.binom.concurrency.synchronize
-import pw.binom.io.AsyncChannel
-import pw.binom.io.bufferedInput
-import pw.binom.io.bufferedOutput
-import pw.binom.io.use
+import pw.binom.io.*
+import pw.binom.readInt
+import pw.binom.writeInt
 
 class FrameConsole(val channel: AsyncChannel) : Console {
     private val lock = SpinLock()
-    private val reader = channel.bufferedInput(closeStream = false)
+    private val reader = channel.bufferedInput(closeParent = false)
     private val writer = channel.bufferedOutput(closeStream = false)
     private val packageBuffer = ByteBuffer.alloc(8)
 
@@ -32,13 +30,13 @@ class FrameConsole(val channel: AsyncChannel) : Console {
             packageBuffer.clear()
             reader.readFully(packageBuffer)
             packageBuffer.flip()
-            val stdTypeNum = packageBuffer.get()
+            val stdTypeNum = packageBuffer.getByte()
             if (stdTypeNum !in 0.toByte()..2.toByte()) {
                 throwIsNotFramedStream()
             }
             val streamType = StreamType.getType(stdTypeNum)
             repeat(3) {
-                if (packageBuffer.get() != 0.toByte()) {
+                if (packageBuffer.getByte() != 0.toByte()) {
                     throwIsNotFramedStream()
                 }
             }
@@ -86,7 +84,7 @@ class FrameConsole(val channel: AsyncChannel) : Console {
 
     suspend fun writeText(data: String) {
         val data = data.encodeToByteArray()
-        ByteBuffer.alloc(data.size) { buf ->
+        ByteBuffer.alloc(data.size).use { buf ->
             buf.write(data)
             buf.flip()
             writeBinary(buf)

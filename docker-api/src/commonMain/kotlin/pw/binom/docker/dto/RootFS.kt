@@ -10,5 +10,5 @@ data class RootFS(
     @SerialName("Layers")
     val layers: List<String> = emptyList(),
     @SerialName("BaseLayer")
-    val baseLayer: String? = null,
+    val baseLayer: String? = null
 )

@@ -60,5 +60,5 @@ data class ExecArgs(
      * The working directory for the exec process inside the container.
      */
     @SerialName("WorkingDir")
-    val workingDir: String? = null,
+    val workingDir: String? = null
 )

@@ -7,5 +7,5 @@ data class ProcessConfig(
     val tty: Boolean,
     val entrypoint: String,
     val arguments: List<String>? = emptyList(),
-    val privileged: Boolean = false,
+    val privileged: Boolean = false
 )
