@@ -3,7 +3,7 @@ package pw.binom.docker.dto
 import kotlinx.serialization.SerialName
 import kotlinx.serialization.Serializable
 import pw.binom.date.DateTime
-import pw.binom.docker.serialization.DateIso8601Serializer
+import pw.binom.docker.serialization.DateTimeIso8601Serializer
 
 @Serializable
 data class ContainerInfo(
@@ -17,7 +17,7 @@ data class ContainerInfo(
      * The time the container was created
      */
     @SerialName("Created")
-    @Serializable(DateIso8601Serializer::class)
+    @Serializable(DateTimeIso8601Serializer::class)
     val created: DateTime,
 
     /**
@@ -555,13 +555,13 @@ data class ContainerState(
      * The time when this container was last started.
      */
     @SerialName("StartedAt")
-    @Serializable(DateIso8601Serializer::class)
+    @Serializable(DateTimeIso8601Serializer::class)
     val startedAt: DateTime? = null,
 
     /**
      * The time when this container last exited.
      */
-    @Serializable(DateIso8601Serializer::class)
+    @Serializable(DateTimeIso8601Serializer::class)
     @SerialName("FinishedAt")
     val finishedAt: DateTime? = null,
 
@@ -625,14 +625,14 @@ data class Log(
     /**
      * Date and time at which this check started
      */
-    @Serializable(DateIso8601Serializer::class)
+    @Serializable(DateTimeIso8601Serializer::class)
     @SerialName("Start")
     val start: DateTime,
 
     /**
      * Date and time at which this check ended
      */
-    @Serializable(DateIso8601Serializer::class)
+    @Serializable(DateTimeIso8601Serializer::class)
     @SerialName("End")
     val end: DateTime,
 

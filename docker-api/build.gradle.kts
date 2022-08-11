@@ -79,6 +79,7 @@ kotlin {
             dependencies {
                 api(kotlin("stdlib-common"))
                 api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
+                api("pw.binom.io:concurrency:${pw.binom.Versions.BINOM_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
             }

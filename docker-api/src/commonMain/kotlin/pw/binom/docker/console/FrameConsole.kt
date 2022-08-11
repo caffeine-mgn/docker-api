@@ -1,13 +1,12 @@
 package pw.binom.docker.console
 
-import pw.binom.concurrency.SpinLock
-import pw.binom.concurrency.synchronize
+import pw.binom.concurrency.AsyncReentrantLock
 import pw.binom.io.*
 import pw.binom.readInt
 import pw.binom.writeInt
 
 class FrameConsole(val channel: AsyncChannel) : Console {
-    private val lock = SpinLock()
+    private val lock = AsyncReentrantLock()
     private val reader = channel.bufferedInput(closeParent = false)
     private val writer = channel.bufferedOutput(closeStream = false)
     private val packageBuffer = ByteBuffer.alloc(8)
@@ -25,7 +24,7 @@ class FrameConsole(val channel: AsyncChannel) : Console {
     }
 
     private fun throwIsNotFramedStream(): Nothing = throw IllegalArgumentException("Stream is not framed stream")
-    private suspend fun <T> readFrame(func: (StreamType, data: ByteBuffer) -> T): T {
+    private suspend fun <T> readFrame(func: (StreamType, data: ByteBuffer) -> T): T =
         lock.synchronize {
             packageBuffer.clear()
             reader.readFully(packageBuffer)
@@ -41,13 +40,12 @@ class FrameConsole(val channel: AsyncChannel) : Console {
                 }
             }
             val packageSize = packageBuffer.readInt()
-            return ByteBuffer.alloc(packageSize).use {
+            return@synchronize ByteBuffer.alloc(packageSize).use {
                 reader.readFully(it)
                 it.flip()
                 func(streamType, it)
             }
         }
-    }
 
     suspend fun <T> readBinaryFrame(func: (BinaryFrame) -> T): T =
         readFrame { s, d ->
@@ -83,10 +81,8 @@ class FrameConsole(val channel: AsyncChannel) : Console {
     }
 
     suspend fun writeText(data: String) {
-        val data = data.encodeToByteArray()
-        ByteBuffer.alloc(data.size).use { buf ->
-            buf.write(data)
-            buf.flip()
+        val dataBytes = data.encodeToByteArray()
+        ByteBuffer.wrap(dataBytes).use { buf ->
             writeBinary(buf)
         }
     }
