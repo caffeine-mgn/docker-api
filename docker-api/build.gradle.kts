@@ -1,7 +1,6 @@
-import kotlinx.coroutines.withTimeout
-import java.util.*
-import java.time.Duration
-import org.jetbrains.kotlin.gradle.targets.jvm.tasks.KotlinJvmTest
+import pw.binom.Versions
+import pw.binom.publish.ifNotMac
+import pw.binom.publish.useDefault
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -14,67 +13,35 @@ plugins {
 //}
 
 kotlin {
-    jvm {
-        compilations.all {
-            kotlinOptions {
-//                jvmTarget = "11"
-            }
-        }
-    }
-
-    linuxX64()
-
-    if (pw.binom.Target.LINUX_ARM64_SUPPORT) {
+//    macosX64()
+    ifNotMac {
+        jvm()
+        mingwX64()
+        linuxX64()
         linuxArm64()
+        androidNativeArm32()
+        androidNativeArm64()
+        androidNativeX86()
+        androidNativeX64()
     }
-
-    mingwX64()
-    macosX64()
 
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api(kotlin("stdlib-common"))
-                api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
-                api("pw.binom.io:concurrency:${pw.binom.Versions.BINOM_VERSION}")
-                api("pw.binom.io:coroutines:${pw.binom.Versions.BINOM_VERSION}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
+                api("pw.binom.io:httpClient:${Versions.BINOM_VERSION}")
+                api("pw.binom.io:concurrency:${Versions.BINOM_VERSION}")
+                api("pw.binom.io:coroutines:${Versions.BINOM_VERSION}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-core:${Versions.KOTLINX_SERIALIZATION_VERSION}")
+                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.KOTLINX_SERIALIZATION_VERSION}")
             }
-        }
-
-        val linuxX64Main by getting {
-            dependsOn(commonMain)
-        }
-        if (pw.binom.Target.LINUX_ARM64_SUPPORT) {
-            val linuxArm64Main by getting {
-                dependsOn(commonMain)
-            }
-        }
-        if (pw.binom.Target.LINUX_ARM32HFP_SUPPORT) {
-            val linuxArm32HfpMain by getting {
-                dependsOn(commonMain)
-            }
-        }
-
-        val mingwX64Main by getting {
-            dependsOn(commonMain)
-        }
-        if (pw.binom.Target.MINGW_X86_SUPPORT) {
-            val mingwX86Main by getting {
-                dependsOn(commonMain)
-            }
-        }
-
-        val macosX64Main by getting {
-            dependsOn(commonMain)
         }
 
         val commonTest by getting {
             dependencies {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${pw.binom.Versions.KOTLINX_COROUTINES_VERSION}")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.KOTLINX_COROUTINES_VERSION}")
             }
         }
         val jvmTest by getting {
@@ -86,6 +53,7 @@ kotlin {
         val linuxX64Test by getting {
             dependsOn(commonTest)
         }
+        useDefault()
     }
 }
 
