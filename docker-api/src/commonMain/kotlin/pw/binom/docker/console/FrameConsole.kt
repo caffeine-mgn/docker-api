@@ -1,15 +1,16 @@
 package pw.binom.docker.console
 
-import pw.binom.concurrency.AsyncReentrantLock
+import pw.binom.coroutines.AsyncReentrantLock
 import pw.binom.io.*
 import pw.binom.readInt
+import pw.binom.wrap
 import pw.binom.writeInt
 
 class FrameConsole(val channel: AsyncChannel) : Console {
     private val lock = AsyncReentrantLock()
     private val reader = channel.bufferedInput(closeParent = false)
     private val writer = channel.bufferedOutput(closeStream = false)
-    private val packageBuffer = ByteBuffer.alloc(8)
+    private val packageBuffer = ByteBuffer(8)
 
     private val textFrame = object : TextFrame {
         override var data: String = ""
@@ -40,7 +41,7 @@ class FrameConsole(val channel: AsyncChannel) : Console {
                 }
             }
             val packageSize = packageBuffer.readInt()
-            return@synchronize ByteBuffer.alloc(packageSize).use {
+            return@synchronize ByteBuffer(packageSize).use {
                 reader.readFully(it)
                 it.flip()
                 func(streamType, it)

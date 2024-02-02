@@ -17,19 +17,17 @@ import pw.binom.docker.exceptions.ContainerNotFoundException
 import pw.binom.docker.exceptions.CreateContainerException
 import pw.binom.docker.exceptions.DockerException
 import pw.binom.docker.exceptions.ExecNotFoundException
-import pw.binom.io.UTF8
+import pw.binom.io.AsyncChannel
 import pw.binom.io.http.HTTPMethod
 import pw.binom.io.http.Headers
-import pw.binom.io.http.forEachHeader
+import pw.binom.io.http.headersOf
 import pw.binom.io.http.websocket.WebSocketConnection
-import pw.binom.io.httpClient.HttpClient
-import pw.binom.io.httpClient.addHeader
-import pw.binom.io.httpClient.setHeader
-import pw.binom.io.readText
+import pw.binom.io.httpClient.*
 import pw.binom.io.use
-import pw.binom.net.URI
-import pw.binom.net.toPath
-import pw.binom.net.toURI
+import pw.binom.url.URI
+import pw.binom.url.UrlEncoder
+import pw.binom.url.toPath
+import pw.binom.url.toURI
 import kotlin.time.ExperimentalTime
 
 class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:2375".toURI()) {
@@ -85,7 +83,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         }
         return client.connect(method = HTTPMethod.POST.code, uri = uri.toURL()).use {
             it.addHeader(Headers.CONTENT_TYPE, "application/json")
-            val r = it.writeText {
+            val r = it.writeTextAndGetResponse {
                 it.append(json.encodeToString(CreateContainerRequest.serializer(), arguments))
             }
             val txt = r.readText().let { it.readText() }
@@ -319,7 +317,8 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
      * @param size Return the size of container as fields SizeRw and SizeRootFs
      */
     suspend fun inspectImage(name: String): ImageInfo {
-        val uri = baseUrl.appendPath("images".toPath).appendPath(UTF8.encode(name).toPath).appendPath("json".toPath)
+        val uri =
+            baseUrl.appendPath("images".toPath).appendPath(UrlEncoder.encode(name).toPath).appendPath("json".toPath)
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri.toURL()
@@ -388,10 +387,10 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         @Serializable
         data class ExecIdDto(@SerialName("Id") val id: String)
         it.setHeader(Headers.CONTENT_TYPE, "application/json")
-        val r = it.writeText {
+        val r = it.writeTextAndGetResponse {
             it.append(json.encodeToString(ExecArgs.serializer(), args))
         }
-        val txt = r.readText().let { it.readText() }
+        val txt = r.readAllText()
         if (r.responseCode == 404) {
             throw ContainerNotFoundException(id)
         }
@@ -440,8 +439,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (stderr) {
             uri = uri.appendQuery("stderr", "1")
         }
-        println("uri=$uri")
-        return client.connect(HTTPMethod.GET.code, uri = uri.toURL()).startWebSocket()
+        return client.connectWebSocket(uri = uri.toURL()).start()
     }
 
     /**
@@ -479,14 +477,12 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (stderr) {
             uri = uri.appendQuery("stderr", "1")
         }
-        println("uri=$uri")
-
-        val r = client.connect(HTTPMethod.POST.code, uri = uri.toURL())
-        r.setHeader(Headers.CONTENT_TYPE, "application/vnd.docker.raw-stream")
+        val r = client.connectTcp(method = HTTPMethod.POST.code, uri = uri.toURL())
+        r.headers[Headers.CONTENT_TYPE] = "application/vnd.docker.raw-stream"
         return if (raw) {
-            RawConsole(r.startTcp())
+            RawConsole(r.start())
         } else {
-            FrameConsole(r.startTcp())
+            FrameConsole(r.start())
         }
     }
 
@@ -501,24 +497,22 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         @Serializable
         class ExecStartData(val Detach: Boolean, val Tty: Boolean? = null)
 
-        val r = client.connect(HTTPMethod.POST.code, uri = uri.toURL())
-        r.setHeader(Headers.CONTENT_TYPE, "application/json")
-        val resp = r.writeText {
-            it.append(
-                json.encodeToString(
-                    ExecStartData.serializer(),
-                    ExecStartData(Detach = detach, Tty = tty)
-                )
+        val r = client.startConnect(
+            method = HTTPMethod.POST.code,
+            uri = uri.toURL(),
+            headers = headersOf(Headers.CONTENT_TYPE to "application/json")
+        )
+        val resp = r.send(
+            json.encodeToString(
+                ExecStartData.serializer(),
+                ExecStartData(Detach = detach, Tty = tty)
             )
-        }
+        )
 
         if (resp.responseCode != 101 && resp.responseCode != 200) {
             throw DockerException("Invalid docker response code: ${resp.responseCode}")
         }
-        resp.headers.forEachHeader { key, value ->
-            println("$key: $value")
-        }
-        val ct = resp.headers[Headers.CONTENT_TYPE]
+        val ct = resp.inputHeaders[Headers.CONTENT_TYPE]
         if (ct == null || ct.isEmpty()) {
             return DetachConsole
         }
@@ -528,15 +522,20 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (ct.single() != "application/vnd.docker.raw-stream") {
             throw DockerException("Unknown ${Headers.CONTENT_TYPE}: ${ct.single()}")
         }
+        val tcpChannel = AsyncChannel.create(
+            input = r.input,
+            output = r.output,
+        )
         return if (raw) {
-            RawConsole(resp.startTcp())
+            RawConsole(tcpChannel)
         } else {
-            FrameConsole(resp.startTcp())
+            FrameConsole(tcpChannel)
         }
     }
 
     suspend fun inspectExec(id: ExecId): ExecInstance {
-        val uri = baseUrl.appendPath("exec".toPath).appendPath(UTF8.encode(id.value).toPath).appendPath("json".toPath)
+        val uri =
+            baseUrl.appendPath("exec".toPath).appendPath(UrlEncoder.encode(id.value).toPath).appendPath("json".toPath)
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri.toURL()

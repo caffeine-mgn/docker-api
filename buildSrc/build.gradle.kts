@@ -7,15 +7,17 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.7.10")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21")
     }
 }
 
 val kotlinVersion = project.property("kotlin.version") as String
 val binomVersion = project.property("binom.version") as String
+val kotlinxCoroutinesVersion = project.property("kotlinx_coroutines.version") as String
+val kotlinxSerializationVersion = project.property("kotlinx_serialization.version") as String
 
 plugins {
-    kotlin("jvm") version "1.7.10"
+    kotlin("jvm") version "1.9.21"
     id("com.github.gmazzo.buildconfig") version "3.0.3"
 }
 
@@ -23,6 +25,8 @@ buildConfig {
     packageName(project.group.toString())
     buildConfigField("String", "KOTLIN_VERSION", "\"$kotlinVersion\"")
     buildConfigField("String", "BINOM_VERSION", "\"$binomVersion\"")
+    buildConfigField("String", "KOTLINX_COROUTINES_VERSION", "\"$kotlinxCoroutinesVersion\"")
+    buildConfigField("String", "KOTLINX_SERIALIZATION_VERSION", "\"$kotlinxSerializationVersion\"")
 }
 
 repositories {

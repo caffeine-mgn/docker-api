@@ -22,57 +22,14 @@ kotlin {
         }
     }
 
-    linuxX64 { // Use your target instead.
-        binaries {
-            staticLib()
-        }
-    }
-    if (pw.binom.Target.LINUX_ARM32HFP_SUPPORT) {
-        linuxArm32Hfp {
-            binaries {
-                staticLib()
-            }
-        }
-    }
+    linuxX64()
 
     if (pw.binom.Target.LINUX_ARM64_SUPPORT) {
-        linuxArm64 {
-            binaries {
-                staticLib()
-            }
-        }
+        linuxArm64()
     }
 
-//    linuxMips32 {
-//        binaries {
-//            staticLib()
-//        }
-//    }
-//
-//    linuxMipsel32 {
-//        binaries {
-//            staticLib()
-//        }
-//    }
-
-    mingwX64 { // Use your target instead.
-        binaries {
-            staticLib()
-        }
-    }
-    if (pw.binom.Target.MINGW_X86_SUPPORT) {
-        mingwX86 { // Use your target instead.
-            binaries {
-                staticLib()
-            }
-        }
-    }
-
-    macosX64 {
-        binaries {
-            framework()
-        }
-    }
+    mingwX64()
+    macosX64()
 
     sourceSets {
         val commonMain by getting {
@@ -80,6 +37,7 @@ kotlin {
                 api(kotlin("stdlib-common"))
                 api("pw.binom.io:httpClient:${pw.binom.Versions.BINOM_VERSION}")
                 api("pw.binom.io:concurrency:${pw.binom.Versions.BINOM_VERSION}")
+                api("pw.binom.io:coroutines:${pw.binom.Versions.BINOM_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-core:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
                 api("org.jetbrains.kotlinx:kotlinx-serialization-json:${pw.binom.Versions.KOTLINX_SERIALIZATION_VERSION}")
             }
