@@ -8,9 +8,9 @@ plugins {
     id("maven-publish")
 }
 
-//apply {
+// apply {
 //    plugin(pw.binom.plugins.BinomPublishPlugin::class.java)
-//}
+// }
 
 kotlin {
 //    macosX64()
@@ -44,14 +44,13 @@ kotlin {
                 api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.KOTLINX_COROUTINES_VERSION}")
             }
         }
-        val jvmTest by getting {
-            dependsOn(commonTest)
-            dependencies {
-                api(kotlin("test"))
+        ifNotMac {
+            val jvmTest by getting {
+                dependsOn(commonTest)
+                dependencies {
+                    api(kotlin("test"))
+                }
             }
-        }
-        val linuxX64Test by getting {
-            dependsOn(commonTest)
         }
         useDefault()
     }
@@ -72,6 +71,6 @@ extensions.getByType(pw.binom.publish.plugins.PublicationPomInfoExtension::class
     author(
         id = "subochev",
         name = "Anton Subochev",
-        email = "caffeine.mgn@gmail.com"
+        email = "caffeine.mgn@gmail.com",
     )
 }
