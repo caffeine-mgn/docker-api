@@ -18,7 +18,15 @@ val kotlinxSerializationVersion = project.property("kotlinx_serialization.versio
 
 plugins {
     kotlin("jvm") version "1.9.21"
-    id("com.github.gmazzo.buildconfig") version "3.0.3"
+    id("com.github.gmazzo.buildconfig") version "5.3.5"
+}
+
+buildConfig {
+    packageName(project.group.toString())
+    buildConfigField("String", "BINOM_VERSION", "\"$binomVersion\"")
+    buildConfigField("String", "KOTLIN_VERSION", "\"${kotlin.coreLibrariesVersion}\"")
+    buildConfigField("String", "KOTLINX_COROUTINES_VERSION", "\"$kotlinxCoroutinesVersion\"")
+    buildConfigField("String", "KOTLINX_SERIALIZATION_VERSION", "\"$kotlinxSerializationVersion\"")
 }
 
 repositories {
