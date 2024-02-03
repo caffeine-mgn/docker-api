@@ -21,14 +21,6 @@ plugins {
     id("com.github.gmazzo.buildconfig") version "3.0.3"
 }
 
-buildConfig {
-    packageName(project.group.toString())
-    buildConfigField("String", "KOTLIN_VERSION", "\"$kotlinVersion\"")
-    buildConfigField("String", "BINOM_VERSION", "\"$binomVersion\"")
-    buildConfigField("String", "KOTLINX_COROUTINES_VERSION", "\"$kotlinxCoroutinesVersion\"")
-    buildConfigField("String", "KOTLINX_SERIALIZATION_VERSION", "\"$kotlinxSerializationVersion\"")
-}
-
 repositories {
     mavenLocal()
     mavenCentral()
