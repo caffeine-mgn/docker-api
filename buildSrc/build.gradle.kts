@@ -7,7 +7,7 @@ buildscript {
     }
 
     dependencies {
-        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.21")
+        classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:1.9.23")
     }
 }
 
@@ -17,7 +17,7 @@ val kotlinxCoroutinesVersion = project.property("kotlinx_coroutines.version") as
 val kotlinxSerializationVersion = project.property("kotlinx_serialization.version") as String
 
 plugins {
-    kotlin("jvm") version "1.9.21"
+    kotlin("jvm") version "1.9.23"
     id("com.github.gmazzo.buildconfig") version "5.3.5"
 }
 

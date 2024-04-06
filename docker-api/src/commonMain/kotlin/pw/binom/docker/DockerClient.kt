@@ -23,7 +23,7 @@ import pw.binom.io.http.Headers
 import pw.binom.io.http.headersOf
 import pw.binom.io.http.websocket.WebSocketConnection
 import pw.binom.io.httpClient.*
-import pw.binom.io.use
+import pw.binom.io.useAsync
 import pw.binom.url.URI
 import pw.binom.url.UrlEncoder
 import pw.binom.url.toPath
@@ -73,8 +73,8 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             uri = uri.appendQuery("filters", json.encodeToString(JsonObject.serializer(), JsonObject(filters)))
         }
 
-        return client.connect(method = HTTPMethod.GET.code, uri = uri.toURL()).use {
-            val txt = it.getResponse().readText().let { it.readText() }
+        return client.connect(method = HTTPMethod.GET.code, uri = uri.toURL()).useAsync {
+            val txt = it.getResponse().readText().useAsync { it.readText() }
             json.decodeFromString(ListSerializer(Container.serializer()), txt)
         }
     }
@@ -87,13 +87,16 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (name != null) {
             uri = uri.appendQuery("name", name)
         }
-        return client.connect(method = HTTPMethod.POST.code, uri = uri.toURL()).use {
+        return client.connect(
+            method = HTTPMethod.POST.code,
+            uri = uri.toURL(),
+        ).useAsync {
             it.addHeader(Headers.CONTENT_TYPE, "application/json")
             val r =
                 it.writeTextAndGetResponse {
                     it.append(json.encodeToString(CreateContainerRequest.serializer(), arguments))
                 }
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             try {
                 if (r.responseCode != 201) {
                     val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
@@ -107,7 +110,10 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun startContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/start".toPath).toURL()).use {
+        client.connect(
+            method = HTTPMethod.POST.code,
+            uri = baseUrl.appendPath("containers/$id/start".toPath).toURL(),
+        ).useAsync {
             val r = it.getResponse()
             if (r.responseCode == 204) {
                 return
@@ -118,7 +124,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
             throw DockerException("Can't create container: ${obj.msg}")
         }
@@ -135,7 +141,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             uri = uri.appendQuery("t", stopTimeout.toString())
         }
 
-        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).useAsync {
             val r = it.getResponse()
             if (r.responseCode == 304) {
                 throw RuntimeException("Containers $id already stopped")
@@ -152,21 +158,25 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun pauseContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/pause".toPath).toURL()).use {
-            val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
-            if (r.responseCode == 404) {
-                throw ContainerNotFoundException(id)
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/pause".toPath).toURL())
+            .useAsync {
+                val r = it.getResponse()
+                val txt = r.readText().let { it.readText() }
+                if (r.responseCode == 404) {
+                    throw ContainerNotFoundException(id)
+                }
+                if (r.responseCode != 204) {
+                    val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
+                    throw RuntimeException("Can't create container: ${obj.msg}")
+                }
             }
-            if (r.responseCode != 204) {
-                val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
-                throw RuntimeException("Can't create container: ${obj.msg}")
-            }
-        }
     }
 
     suspend fun unpauseContainer(id: String) {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/unpause".toPath).toURL()).use {
+        client.connect(
+            method = HTTPMethod.POST.code,
+            uri = baseUrl.appendPath("containers/$id/unpause".toPath).toURL(),
+        ).useAsync {
             val r = it.getResponse()
             val txt = r.readText().let { it.readText() }
             if (r.responseCode == 404) {
@@ -180,20 +190,21 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     }
 
     suspend fun waitForStopContainer(id: String): WaitResponse {
-        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/wait".toPath).toURL()).use {
-            val r = it.getResponse()
-            if (r.responseCode == 200) {
-                val txt = r.readText().let { it.readText() }
-                return json.decodeFromString(WaitResponse.serializer(), txt)
-            }
+        client.connect(HTTPMethod.POST.code, baseUrl.appendPath("containers/$id/wait".toPath).toURL())
+            .useAsync {
+                val r = it.getResponse()
+                if (r.responseCode == 200) {
+                    val txt = r.readText().useAsync { it.readText() }
+                    return json.decodeFromString(WaitResponse.serializer(), txt)
+                }
 
-            if (r.responseCode == 404) {
-                throw ContainerNotFoundException(id)
+                if (r.responseCode == 404) {
+                    throw ContainerNotFoundException(id)
+                }
+                val txt = r.readText().useAsync { it.readText() }
+                val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
+                throw RuntimeException("Can't create container: ${obj.msg}")
             }
-            val txt = r.readText().let { it.readText() }
-            val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
-            throw RuntimeException("Can't create container: ${obj.msg}")
-        }
     }
 
     suspend fun restartContainer(
@@ -205,9 +216,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (stopTimeout != null) {
             uri = uri.appendQuery("t", stopTimeout.toString())
         }
-        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
@@ -227,9 +238,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (signal != null) {
             uri = uri.appendQuery("signal", signal)
         }
-        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).useAsync { it ->
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
@@ -250,9 +261,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         require(newName.isNotEmpty()) { "stopTimeout should be more or equal 0" }
 
         val uri = baseUrl.appendPath("containers/$id/rename".toPath).appendQuery("name", newName)
-        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
+        client.connect(HTTPMethod.POST.code, uri.toURL()).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
@@ -287,22 +298,23 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
             uri = uri.appendQuery("tag", tag)
         }
 
-        client.connect(HTTPMethod.POST.code, uri.toURL()).use {
-            val r = it.getResponse()
-            if (r.responseCode == 200) {
-                r.readText().let { it.readText() }
-                return@use
-            }
+        client.connect(HTTPMethod.POST.code, uri.toURL())
+            .useAsync {
+                val r = it.getResponse()
+                if (r.responseCode == 200) {
+                    r.readText().useAsync { it.readText() }
+                    return@useAsync
+                }
 
-            if (r.responseCode == 404) {
-                throw RuntimeException("Can't find image \"$image\"")
+                if (r.responseCode == 404) {
+                    throw RuntimeException("Can't find image \"$image\"")
+                }
+                val txt = r.readText().useAsync { it.readText() }
+                val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
+                if (r.responseCode != 200) {
+                    throw RuntimeException(obj.msg)
+                }
             }
-            val txt = r.readText().let { it.readText() }
-            val obj = json.decodeFromString(ErrorResponse.serializer(), txt)
-            if (r.responseCode != 200) {
-                throw RuntimeException(obj.msg)
-            }
-        }
     }
 
     /**
@@ -318,9 +330,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri.toURL(),
-        ).use {
+        ).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
@@ -351,9 +363,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri.toURL(),
-        ).use {
+        ).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ImageNotFoundException(name)
             }
@@ -394,9 +406,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         if (link != null) {
             uri = uri.appendQuery("link", link.toString())
         }
-        client.connect(HTTPMethod.DELETE.code, uri.toURL()).use {
+        client.connect(HTTPMethod.DELETE.code, uri.toURL()).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ContainerNotFoundException(id)
             }
@@ -420,7 +432,7 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
     ) = client.connect(
         method = HTTPMethod.POST.code,
         uri = baseUrl.appendPath("containers/$id/exec".toPath).toURL(),
-    ).use {
+    ).useAsync {
         @Serializable
         data class ExecIdDto(
             @SerialName("Id") val id: String,
@@ -582,9 +594,9 @@ class DockerClient(val client: HttpClient, val baseUrl: URI = "http://127.0.0.1:
         client.connect(
             method = HTTPMethod.GET.code,
             uri = uri.toURL(),
-        ).use {
+        ).useAsync {
             val r = it.getResponse()
-            val txt = r.readText().let { it.readText() }
+            val txt = r.readText().useAsync { it.readText() }
             if (r.responseCode == 404) {
                 throw ExecNotFoundException(id)
             }
