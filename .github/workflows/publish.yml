@@ -20,7 +20,9 @@ jobs:
       LIBCLANG_DISABLE_CRASH_RECOVERY: 1
     strategy:
       matrix:
-        os: [ubuntu-latest]
+        os:
+          - ubuntu-latest
+#          - macos-latest
     runs-on: ${{ matrix.os }}
 
     steps:
