@@ -1,6 +1,6 @@
 import pw.binom.Versions
+import pw.binom.publish.allTargets
 import pw.binom.publish.ifNotMac
-import pw.binom.publish.useDefault
 
 plugins {
     id("org.jetbrains.kotlin.multiplatform")
@@ -13,18 +13,10 @@ plugins {
 // }
 
 kotlin {
-//    macosX64()
-    ifNotMac {
-        jvm()
-        mingwX64()
-        linuxX64()
-        linuxArm64()
-        androidNativeArm32()
-        androidNativeArm64()
-        androidNativeX86()
-        androidNativeX64()
+    allTargets {
+        -"js"
     }
-
+    applyDefaultHierarchyTemplate()
     sourceSets {
         val commonMain by getting {
             dependencies {
@@ -52,7 +44,6 @@ kotlin {
                 }
             }
         }
-        useDefault()
     }
 }
 
