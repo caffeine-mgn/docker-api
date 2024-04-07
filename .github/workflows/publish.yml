@@ -12,7 +12,7 @@ on:
       machine:
         description: 'Machine to run on'     
         required: true
-        default: 'macos-latest'
+        default: 'ubuntu-latest'
 
 jobs:
   publish:
