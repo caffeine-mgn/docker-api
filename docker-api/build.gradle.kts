@@ -1,5 +1,6 @@
 import pw.binom.Versions
 import pw.binom.publish.allTargets
+import pw.binom.publish.applyDefaultHierarchyBinomTemplate
 import pw.binom.publish.ifNotMac
 
 plugins {
@@ -8,15 +9,11 @@ plugins {
     id("maven-publish")
 }
 
-// apply {
-//    plugin(pw.binom.plugins.BinomPublishPlugin::class.java)
-// }
-
 kotlin {
     allTargets {
         -"js"
     }
-    applyDefaultHierarchyTemplate()
+    applyDefaultHierarchyBinomTemplate()
     sourceSets {
         val commonMain by getting {
             dependencies {

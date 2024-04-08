@@ -1,3 +1,5 @@
+import pw.binom.publish.getExternalVersion
+
 buildscript {
 
     repositories {
@@ -12,7 +14,7 @@ buildscript {
 }
 
 allprojects {
-    version = System.getenv("GITHUB_REF_NAME") ?: "1.0.0-SNAPSHOT"
+    version = getExternalVersion()
     group = "pw.binom.io"
 
     repositories {
