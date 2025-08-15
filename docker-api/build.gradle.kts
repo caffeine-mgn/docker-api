@@ -1,28 +1,58 @@
-import pw.binom.Versions
-import pw.binom.publish.allTargets
-import pw.binom.publish.applyDefaultHierarchyBinomTemplate
-import pw.binom.publish.ifNotMac
+import org.jetbrains.kotlin.gradle.dsl.JvmTarget
+
+//import pw.binom.Versions
+//import pw.binom.publish.allTargets
+//import pw.binom.publish.applyDefaultHierarchyBinomTemplate
+//import pw.binom.publish.ifNotMac
 
 plugins {
-    id("org.jetbrains.kotlin.multiplatform")
-    id("kotlinx-serialization")
-    id("maven-publish")
+//    id("org.jetbrains.kotlin.multiplatform")
+//    id("kotlinx-serialization")
+//    id("maven-publish")
+    alias(libs.plugins.kotlin.multiplatform)
+    alias(libs.plugins.binom.publish)
+    alias(libs.plugins.publish.central)
+    alias(libs.plugins.kotlinx.serialization)
 }
 
 kotlin {
-    allTargets {
-        -"js"
+//    allTargets {
+//        -"js"
+//    }
+    withSourcesJar(publish = true)
+    jvm {
+        compilerOptions {
+            jvmTarget.set(JvmTarget.JVM_1_8)
+        }
     }
-    applyDefaultHierarchyBinomTemplate()
+    linuxX64()
+    linuxArm64()
+    mingwX64()
+    macosX64()
+    macosArm64()
+    iosX64()
+    iosArm64()
+    iosSimulatorArm64()
+    watchosX64()
+    watchosArm32()
+    watchosDeviceArm64()
+    watchosSimulatorArm64()
+    tvosX64()
+    tvosArm64()
+    tvosSimulatorArm64()
+    androidNativeArm32()
+    androidNativeArm64()
+    androidNativeX64()
+    androidNativeX86()
+    applyDefaultHierarchyTemplate()
     sourceSets {
         val commonMain by getting {
             dependencies {
                 api(kotlin("stdlib-common"))
-                api("pw.binom.io:httpClient:${Versions.BINOM_VERSION}")
-                api("pw.binom.io:concurrency:${Versions.BINOM_VERSION}")
-                api("pw.binom.io:coroutines:${Versions.BINOM_VERSION}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-core:${Versions.KOTLINX_SERIALIZATION_VERSION}")
-                api("org.jetbrains.kotlinx:kotlinx-serialization-json:${Versions.KOTLINX_SERIALIZATION_VERSION}")
+                api(libs.binom.io.http.client.core)
+                api(libs.binom.io.concurrency)
+                api(libs.binom.io.coroutines)
+                api(libs.kotlinx.serialization.json)
             }
         }
 
@@ -30,15 +60,13 @@ kotlin {
             dependencies {
                 api(kotlin("test-common"))
                 api(kotlin("test-annotations-common"))
-                api("org.jetbrains.kotlinx:kotlinx-coroutines-test:${Versions.KOTLINX_COROUTINES_VERSION}")
+                api("org.jetbrains.kotlinx:kotlinx-coroutines-test:1.10.2")
             }
         }
-        ifNotMac {
-            val jvmTest by getting {
-                dependsOn(commonTest)
-                dependencies {
-                    api(kotlin("test"))
-                }
+        val jvmTest by getting {
+            dependsOn(commonTest)
+            dependencies {
+                api(kotlin("test"))
             }
         }
     }
@@ -51,14 +79,84 @@ tasks {
     }
 }
 
-apply<pw.binom.publish.plugins.PrepareProject>()
 
-extensions.getByType(pw.binom.publish.plugins.PublicationPomInfoExtension::class).apply {
-    useApache2License()
-    gitScm("https://github.com/caffeine-mgn/docker-api")
-    author(
-        id = "subochev",
-        name = "Anton Subochev",
-        email = "caffeine.mgn@gmail.com",
-    )
+fun Project.propertyOrNull(property: String) =
+    if (hasProperty(property)) property(property) as String else null
+
+val keyId = propertyOrNull("binom.gpg.key_id")
+val password = propertyOrNull("binom.gpg.password")
+val privateKey = propertyOrNull("binom.gpg.private_key")
+
+if (keyId != null && password != null && privateKey != null) {
+    signing {
+        useInMemoryPgpKeys(keyId, privateKey.replace("|", "\n"), password)
+    }
 }
+
+val binomUser = propertyOrNull("binom.repo.user")
+val binomPassword = propertyOrNull("binom.repo.password")
+
+if (binomUser != null && binomPassword != null) {
+    publishing {
+        repositories {
+            maven {
+                name = "Binom"
+                url = uri("https://repo.binom.pw")
+                credentials {
+                    username = binomUser
+                    password = binomPassword
+                }
+            }
+        }
+    }
+}
+
+val repoSlug = "caffeine-mgn/docker-api"
+
+publishOnCentral {
+    if (project.description != null) {
+        projectDescription.set(project.description)
+    }
+//    projectLongName.set(extra["projectLongName"].toString())
+    projectUrl.set("https://github.com/$repoSlug")
+    licenseName.set("Apache-2.0 license")
+    licenseUrl.set(projectUrl.map { "$it/blob/main/LICENSE" })
+    scmConnection.set("git:git@github.com:$repoSlug.git")
+    repoOwner.set("caffeine-mgn")
+    projectUrl.set("https://github.com/$repoSlug")
+}
+
+val token = System.getenv("GITHUB_TOKEN")
+if (token != null) {
+    publishOnCentral {
+        repository("https://maven.pkg.github.com/${repoSlug.lowercase()}") {
+            user.set("caffeine-mgn")
+            password.set(System.getenv("GITHUB_TOKEN"))
+        }
+    }
+}
+
+publishing.publications.withType<MavenPublication>().configureEach {
+    pom {
+        developers {
+            developer {
+                name.set("Subochev Anton")
+                email.set("caffeine.mgn@gmail.com")
+                url.set("https://github.com/caffeine-mgn")
+                roles.set(mutableSetOf("architect", "developer"))
+            }
+        }
+    }
+}
+
+tasks {
+    val singTasks = withType<Sign>()
+    withType<AbstractPublishToMaven>().all {
+        dependsOn(singTasks)
+    }
+    val releaseMavenCentralPortalPublication by getting
+    val zipMavenCentralPortalPublication by getting
+
+    releaseMavenCentralPortalPublication.dependsOn(zipMavenCentralPortalPublication)
+}
+//apply<pw.binom.publish.plugins.PrepareProject>()

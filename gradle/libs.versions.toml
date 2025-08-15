@@ -1,0 +1,23 @@
+[versions]
+kotlin = "2.2.10"
+binom-io="1.0.0-SNAPSHOT"
+binom-publish = "0.1.25"
+kotlinx-serialization = "1.9.0"
+kotlinx-coroutines = "1.10.2"
+
+[libraries]
+kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serialization-json", version.ref = "kotlinx-serialization" }
+binom-io-http-client-core = { module = "pw.binom.io:httpClient", version.ref = "binom-io" }
+binom-io-concurrency = { module = "pw.binom.io:concurrency", version.ref = "binom-io" }
+binom-io-coroutines = { module = "pw.binom.io:coroutines", version.ref = "binom-io" }
+
+[plugins]
+
+kotlin-noarg = { id = "org.jetbrains.kotlin:kotlin-noarg", version.ref = "kotlin" }
+kotlin-spring = { id = "kotlin-spring", version.ref = "kotlin" }
+kotlin-allopen = { id = "org.jetbrains.kotlin:kotlin-allopen", version.ref = "kotlin" }
+spring-boot = { id = "org.springframework.boot", version = "3.3.1" }
+kotlin-multiplatform = { id = "org.jetbrains.kotlin.multiplatform", version.ref = "kotlin" }
+binom-publish = { id = "pw.binom.publish", version.ref = "binom-publish" }
+publish-central = { id = "org.danilopianini.publish-on-central", version = "9.1.0" }
+kotlinx-serialization = { id = "org.jetbrains.kotlin.plugin.serialization", version.ref = "kotlin" }

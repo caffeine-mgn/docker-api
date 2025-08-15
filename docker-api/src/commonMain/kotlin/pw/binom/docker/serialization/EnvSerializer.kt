@@ -9,7 +9,7 @@ import pw.binom.docker.dto.Env
 
 object EnvSerializer : KSerializer<Env> {
     override fun deserialize(decoder: Decoder): Env {
-        val items = decoder.decodeString().split(' ', limit = 2)
+        val items = decoder.decodeString().split('=', limit = 2)
         return Env(
             name = items[0],
             value = items[1]

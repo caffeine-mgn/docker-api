@@ -1,5 +1,11 @@
 import pw.binom.publish.getExternalVersion
 
+plugins {
+    alias(libs.plugins.kotlin.multiplatform) apply false
+    alias(libs.plugins.binom.publish) apply false
+    alias(libs.plugins.publish.central) apply false
+    alias(libs.plugins.kotlinx.serialization) apply false
+}/*
 buildscript {
 
     repositories {
@@ -12,14 +18,15 @@ buildscript {
         classpath("org.jetbrains.kotlin:kotlin-serialization:${pw.binom.Versions.KOTLIN_VERSION}")
     }
 }
-
+*/
 allprojects {
-    version = getExternalVersion()
-    group = "pw.binom.io"
+    version = System.getenv("GITHUB_REF_NAME") ?: (property("version") as String?)?.takeIf { it != "unspecified" }
+            ?: "1.0.0-SNAPSHOT"
+    group = "pw.binom.docker"
 
-    repositories {
-        mavenLocal()
-        mavenCentral()
-        maven(url = "https://repo.binom.pw")
-    }
+//    repositories {
+//        mavenLocal()
+//        mavenCentral()
+//        maven(url = "https://repo.binom.pw")
+//    }
 }
