@@ -11,6 +11,8 @@ import pw.binom.network.NetworkCoroutineDispatcher
 import pw.binom.network.NetworkCoroutineDispatcherImpl
 import kotlin.test.Test
 import kotlin.test.assertTrue
+import kotlin.time.Duration
+import kotlin.time.Duration.Companion.seconds
 import kotlin.time.ExperimentalTime
 
 fun runBlockingAnyway(func: suspend CoroutineScope.() -> Unit) {
@@ -90,7 +92,7 @@ class DockerClientTest {
                     )
                 )
                 c.startContainer(cc.id)
-                c.waitContainerRunning(cc.id)
+                c.waitContainerRunning(cc.id, 60.seconds)
 
                 while (true) {
                     val execId = c.exec(

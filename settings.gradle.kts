@@ -1,5 +1,6 @@
 rootProject.name = "Binom-Docker-Api"
 include(":docker-api")
+include(":testcontainers")
 
 pluginManagement {
     repositories {

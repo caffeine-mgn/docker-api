@@ -10,6 +10,7 @@ kotlinx-serialization-json = { module = "org.jetbrains.kotlinx:kotlinx-serializa
 binom-io-http-client-core = { module = "pw.binom.io:httpClient", version.ref = "binom-io" }
 binom-io-concurrency = { module = "pw.binom.io:concurrency", version.ref = "binom-io" }
 binom-io-coroutines = { module = "pw.binom.io:coroutines", version.ref = "binom-io" }
+kotlinx-coroutines-test = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-test", version.ref = "kotlinx-coroutines" }
 
 [plugins]
 

@@ -33,7 +33,10 @@ import pw.binom.url.URI
 import pw.binom.url.UrlEncoder
 import pw.binom.url.toPath
 import pw.binom.url.toURI
+import kotlin.time.Duration
 import kotlin.time.ExperimentalTime
+import kotlin.time.TimeSource
+import kotlin.time.measureTime
 
 class DockerClient(val client: HttpClientRunnable, val baseUrl: URI = "http://127.0.0.1:2375".toURI()) {
     private val json =
@@ -280,7 +283,7 @@ class DockerClient(val client: HttpClientRunnable, val baseUrl: URI = "http://12
     ) {
         try {
             inspectImage(image)
-        } catch (e: ImageNotFoundException) {
+        } catch (_: ImageNotFoundException) {
             pullImage(image = image, tag = tag)
         }
     }
@@ -606,9 +609,13 @@ class DockerClient(val client: HttpClientRunnable, val baseUrl: URI = "http://12
         }
     }
 
-    suspend fun waitContainerRunning(id: String) {
+    suspend fun waitContainerRunning(id: String, timeout: Duration) {
 //        println("Wating health")
+        val now = TimeSource.Monotonic.markNow()
         while (true) {
+            if (!timeout.isInfinite() && now.elapsedNow() > timeout) {
+                throw IllegalStateException("Timeout waiting for start container with ID $id")
+            }
             val c = inspectСontainer(id)
             if (c.state.status == ContainerStateEnum.RUNNING) {
                 break
